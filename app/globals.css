@@ -1,3 +1,4 @@
+/* Reset */
 html, body {
   margin: 0;
   padding: 0;
@@ -6,21 +7,55 @@ html, body {
   font-family: Arial, sans-serif;
 }
 
+/* Masonry Grid */
 .masonry {
-  column-count: 4;
+  column-count: 2;
   column-gap: 10px;
 }
 
-@media (max-width: 1200px) {
-  .masonry { column-count: 3; }
-}
-@media (max-width: 800px) {
-  .masonry { column-count: 2; }
-}
-@media (max-width: 520px) {
-  .masonry { column-count: 1; }
+/* Très grands écrans */
+@media (min-width: 1600px) {
+  .masonry {
+    column-count: 6;
+  }
 }
 
+/* Grands écrans */
+@media (min-width: 1200px) and (max-width: 1599px) {
+  .masonry {
+    column-count: 5;
+  }
+}
+
+/* Laptops */
+@media (min-width: 900px) and (max-width: 1199px) {
+  .masonry {
+    column-count: 4;
+  }
+}
+
+/* Tablettes */
+@media (min-width: 600px) and (max-width: 899px) {
+  .masonry {
+    column-count: 3;
+  }
+}
+
+/* Mobiles */
+@media (max-width: 599px) {
+  .masonry {
+    column-count: 2;
+  }
+}
+
+/* Très petits mobiles */
+@media (max-width: 420px) {
+  .masonry {
+    column-count: 1;
+  }
+}
+
+/* Masonry items */
 .masonryItem {
   break-inside: avoid;
   margin-bottom: 10px;
