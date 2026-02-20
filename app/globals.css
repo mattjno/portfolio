@@ -1,0 +1,33 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #000;
+  color: #fff;
+  font-family: Arial, sans-serif;
+}
+
+.masonry {
+  column-count: 4;
+  column-gap: 10px;
+}
+
+@media (max-width: 1200px) {
+  .masonry { column-count: 3; }
+}
+@media (max-width: 800px) {
+  .masonry { column-count: 2; }
+}
+@media (max-width: 520px) {
+  .masonry { column-count: 1; }
+}
+
+.masonryItem {
+  break-inside: avoid;
+  margin-bottom: 10px;
+}
+
+.masonryImg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
