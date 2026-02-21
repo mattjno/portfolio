@@ -1,37 +1,21 @@
-import fs from "fs";
-import path from "path";
+import photos from "../public/photos.json";
+
+const BASE_URL = "https://f003.backblazeb2.com/file/mattjno-photos/";
 
 export default function Home() {
-  const directory = path.join(process.cwd(), "public/photos/bestof");
-
-  const photos = fs.existsSync(directory)
-    ? fs
-        .readdirSync(directory)
-        .filter((file) => /\.(jpg|jpeg|png|webp)$/i.test(file))
-    : [];
-
   return (
     <main style={{ padding: "20px" }}>
-      {/* Header */}
       <header style={{ marginBottom: "22px" }}>
-        <div
-          style={{
-            fontSize: "14px",
-            letterSpacing: "2px",
-            opacity: 0.85,
-          }}
-        >
+        <div style={{ fontSize: "14px", letterSpacing: "2px", opacity: 0.85 }}>
           MATTJNO | Sport Photography
         </div>
       </header>
 
-      {/* Grid */}
       <section className="masonry">
         {photos.map((file) => (
           <div key={file} className="masonryItem">
             <img
-              src={`/photos/bestof/${file}`}
-              alt=""
+              src={`${BASE_URL}${file}`}
               className="masonryImg"
               loading="lazy"
             />
