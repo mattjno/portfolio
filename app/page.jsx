@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export default function Home() {
-  const [urls, setUrls] = useState([]);
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [index, setIndex] = useState(null);
+  const [visibleCount, setVisibleCount] = useState(60);
 
   useEffect(() => {
     let alive = true;
@@ -16,10 +17,10 @@ export default function Home() {
         const res = await fetch("/api/photos", { cache: "no-store" });
         const data = await res.json();
         if (!res.ok) throw new Error(data?.error || "Failed to load photos");
-        if (alive) setUrls(data.urls || []);
+        if (alive) setItems(data.items || []);
       } catch (e) {
         console.error(e);
-        if (alive) setUrls([]);
+        if (alive) setItems([]);
       } finally {
         if (alive) setLoading(false);
       }
@@ -31,12 +32,19 @@ export default function Home() {
     };
   }, []);
 
+  const displayed = useMemo(
+    () => items.slice(0, visibleCount),
+    [items, visibleCount]
+  );
+
   const open = (i) => setIndex(i);
   const close = () => setIndex(null);
 
-  const next = () => setIndex((prev) => (prev + 1) % urls.length);
+  const next = () =>
+    setIndex((prev) => (prev + 1) % displayed.length);
+
   const prev = () =>
-    setIndex((prev) => (prev === 0 ? urls.length - 1 : prev - 1));
+    setIndex((prev) => (prev === 0 ? displayed.length - 1 : prev - 1));
 
   useEffect(() => {
     const handleKey = (e) => {
@@ -47,7 +55,7 @@ export default function Home() {
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [index, urls.length]);
+  }, [index, displayed.length]);
 
   return (
     <main style={{ padding: "20px" }}>
@@ -63,10 +71,15 @@ export default function Home() {
       </header>
 
       <section className="masonry">
-        {urls.map((src, i) => (
-          <button key={src} className="item" onClick={() => open(i)} aria-label="Open photo">
+        {displayed.map((it, i) => (
+          <button
+            key={it.thumb}
+            className="item"
+            onClick={() => open(i)}
+            aria-label="Open photo"
+          >
             <img
-              src={src}
+              src={it.thumb}
               className="img"
               loading="lazy"
               decoding="async"
@@ -76,23 +89,54 @@ export default function Home() {
         ))}
       </section>
 
+      {!loading && visibleCount < items.length && (
+        <div style={{ marginTop: 18, display: "flex", justifyContent: "center" }}>
+          <button
+            onClick={() => setVisibleCount((c) => Math.min(c + 60, items.length))}
+            style={{
+              background: "rgba(255,255,255,0.08)",
+              color: "#fff",
+              border: 0,
+              borderRadius: 999,
+              padding: "10px 16px",
+              cursor: "pointer",
+              fontSize: 14,
+            }}
+          >
+            Afficher plus
+          </button>
+        </div>
+      )}
+
       {index !== null && (
         <div className="modal" onClick={close}>
-          <button className="nav left" onClick={(e) => (e.stopPropagation(), prev())} aria-label="Previous">
+          <button
+            className="nav left"
+            onClick={(e) => (e.stopPropagation(), prev())}
+            aria-label="Previous"
+          >
             ‹
           </button>
 
           <img
-            src={urls[index]}
+            src={displayed[index]?.full}
             className="modalImg"
             onClick={(e) => e.stopPropagation()}
           />
 
-          <button className="nav right" onClick={(e) => (e.stopPropagation(), next())} aria-label="Next">
+          <button
+            className="nav right"
+            onClick={(e) => (e.stopPropagation(), next())}
+            aria-label="Next"
+          >
             ›
           </button>
 
-          <button className="close" onClick={(e) => (e.stopPropagation(), close())} aria-label="Close">
+          <button
+            className="close"
+            onClick={(e) => (e.stopPropagation(), close())}
+            aria-label="Close"
+          >
             ✕
           </button>
         </div>
@@ -140,7 +184,7 @@ export default function Home() {
           border-radius: 2px;
           background: #111;
           opacity: 0;
-          transition: opacity 220ms ease;
+          transition: opacity 200ms ease;
         }
 
         .img.loaded {
