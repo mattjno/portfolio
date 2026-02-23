@@ -35,7 +35,8 @@ export default function Home() {
   const close = () => setIndex(null);
 
   const next = () => setIndex((prev) => (prev + 1) % urls.length);
-  const prev = () => setIndex((prev) => (prev === 0 ? urls.length - 1 : prev - 1));
+  const prev = () =>
+    setIndex((prev) => (prev === 0 ? urls.length - 1 : prev - 1));
 
   useEffect(() => {
     const handleKey = (e) => {
@@ -61,10 +62,9 @@ export default function Home() {
         )}
       </header>
 
-      <section className="grid">
+      <section className="masonry">
         {urls.map((src, i) => (
-          <button key={src} className="tile" onClick={() => open(i)} aria-label="Open photo">
-            <div className="ph" />
+          <button key={src} className="item" onClick={() => open(i)} aria-label="Open photo">
             <img
               src={src}
               className="img"
@@ -104,56 +104,47 @@ export default function Home() {
           color: #fff;
         }
 
-        .grid {
-          display: grid;
-          grid-template-columns: repeat(6, minmax(0, 1fr));
-          gap: 12px;
+        .masonry {
+          column-count: 6;
+          column-gap: 14px;
         }
 
         @media (max-width: 1600px) {
-          .grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+          .masonry { column-count: 5; }
         }
         @media (max-width: 1200px) {
-          .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+          .masonry { column-count: 4; }
         }
         @media (max-width: 900px) {
-          .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+          .masonry { column-count: 3; }
         }
         @media (max-width: 600px) {
-          .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+          .masonry { column-count: 2; }
         }
 
-        .tile {
-          position: relative;
+        .item {
+          width: 100%;
           border: 0;
           padding: 0;
           background: transparent;
           cursor: pointer;
-          border-radius: 2px;
-          overflow: hidden;
-        }
-
-        /* Placeholder stable: évite les gros shifts */
-        .ph {
-          width: 100%;
-          aspect-ratio: 4 / 3; /* compromis neutre */
-          background: #111;
+          margin: 0 0 14px 0;
+          break-inside: avoid;
+          display: block;
         }
 
         .img {
-          position: absolute;
-          inset: 0;
           width: 100%;
-          height: 100%;
-          object-fit: cover; /* joli rendu grid */
+          height: auto;
+          display: block;
+          border-radius: 2px;
+          background: #111;
           opacity: 0;
-          transform: scale(1.01);
-          transition: opacity 220ms ease, transform 260ms ease;
+          transition: opacity 220ms ease;
         }
 
         .img.loaded {
           opacity: 1;
-          transform: scale(1);
         }
 
         .modal {
@@ -201,10 +192,6 @@ export default function Home() {
           border-radius: 999px;
           cursor: pointer;
           font-size: 18px;
-        }
-
-        @media (max-width: 600px) {
-          .nav { width: 42px; height: 42px; font-size: 30px; }
         }
       `}</style>
     </main>
