@@ -3,7 +3,8 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 const BUCKET_NAME = "mattjno-photos";
-const PREFIX = "bestof/";
+const THUMBS_PREFIX = "bestof/thumbs/";
+const FULL_PREFIX = "bestof/full/";
 const PUBLIC_BASE_URL = `https://f003.backblazeb2.com/file/${BUCKET_NAME}/`;
 
 export async function GET() {
@@ -18,7 +19,6 @@ export async function GET() {
       );
     }
 
-    // 1) Authorize account
     const authRes = await fetch(
       "https://api.backblazeb2.com/b2api/v2/b2_authorize_account",
       {
@@ -53,14 +53,13 @@ export async function GET() {
       );
     }
 
-    // 2) List files with pagination (in case you have a lot)
     let nextFileName = null;
-    let allFiles = [];
+    let allThumbKeys = [];
 
     while (true) {
       const body = {
         bucketId,
-        prefix: PREFIX,
+        prefix: THUMBS_PREFIX,
         maxFileCount: 1000,
       };
       if (nextFileName) body.startFileName = nextFileName;
@@ -88,24 +87,28 @@ export async function GET() {
         .map((f) => f.fileName)
         .filter((name) => /\.(jpg|jpeg|png|webp)$/i.test(name));
 
-      allFiles.push(...batch);
+      allThumbKeys.push(...batch);
 
       nextFileName = data.nextFileName;
       if (!nextFileName) break;
     }
 
-    // 3) Sort for stable display
-    allFiles.sort((a, b) => a.localeCompare(b));
+    allThumbKeys.sort((a, b) => a.localeCompare(b));
 
-    const urls = allFiles.map((fileName) => `${PUBLIC_BASE_URL}${fileName}`);
+    const items = allThumbKeys.map((thumbKey) => {
+      const fileNameOnly = thumbKey.slice(THUMBS_PREFIX.length);
+      const fullKey = `${FULL_PREFIX}${fileNameOnly}`;
+
+      return {
+        name: fileNameOnly,
+        thumb: `${PUBLIC_BASE_URL}${thumbKey}`,
+        full: `${PUBLIC_BASE_URL}${fullKey}`,
+      };
+    });
 
     return NextResponse.json(
-      { files: allFiles, urls },
-      {
-        headers: {
-          "Cache-Control": "no-store, max-age=0",
-        },
-      }
+      { items },
+      { headers: { "Cache-Control": "no-store, max-age=0" } }
     );
   } catch (e) {
     return NextResponse.json(
