@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link"; // Import indispensable pour la navigation
 
 export default function Home() {
   const [items, setItems] = useState([]);
@@ -21,10 +22,35 @@ export default function Home() {
 
   return (
     <main style={{ background: "#000", color: "#fff", minHeight: "100vh", padding: "10px" }}>
-      <header style={{ padding: "20px 0", textAlign: "center" }}>
-        <h1 style={{ fontSize: "11px", letterSpacing: "5px", fontWeight: "300", textTransform: "uppercase" }}>
+      <header style={{ padding: "40px 0", textAlign: "center" }}>
+        <h1 style={{ fontSize: "11px", letterSpacing: "5px", fontWeight: "300", textTransform: "uppercase", marginBottom: "20px" }}>
           MATTJNO | Sport Photography
         </h1>
+
+        {/* NAVIGATION ENTRE SELECTION ET ALBUMS */}
+        <nav style={{ display: "flex", justifyContent: "center", gap: "25px", marginBottom: "10px" }}>
+          <Link href="/" style={{ 
+            fontSize: "10px", 
+            letterSpacing: "2px", 
+            textDecoration: "none", 
+            color: "#fff", 
+            borderBottom: "1px solid #fff",
+            paddingBottom: "5px",
+            textTransform: "uppercase" 
+          }}>
+            Ma Sélection
+          </Link>
+          <Link href="/albums" className="nav-link" style={{ 
+            fontSize: "10px", 
+            letterSpacing: "2px", 
+            textDecoration: "none", 
+            color: "#555", 
+            textTransform: "uppercase",
+            transition: "0.3s"
+          }}>
+            Albums
+          </Link>
+        </nav>
       </header>
 
       <section className="masonry-gallery">
@@ -34,7 +60,6 @@ export default function Home() {
             className="masonry-brick"
             onClick={() => setIndex(i)}
             style={{ 
-              /* On force le ratio directement ici */
               aspectRatio: `${it.w} / ${it.h}`,
             }}
           >
@@ -64,12 +89,14 @@ export default function Home() {
       <style jsx global>{`
         body { margin: 0; background: #000; }
 
+        .nav-link:hover { color: #fff !important; }
+
         .masonry-gallery {
           column-count: 6;
           column-gap: 12px;
           padding: 0 10px;
           width: 100%;
-          display: block; /* Force l'affichage du conteneur */
+          display: block;
         }
 
         .masonry-brick {
@@ -85,7 +112,7 @@ export default function Home() {
 
         .raw-img {
           width: 100%;
-          height: auto; /* Laisse le ratio du parent dicter la hauteur */
+          height: auto;
           display: block;
           opacity: 0;
           transition: opacity 0.5s ease;
@@ -100,7 +127,13 @@ export default function Home() {
         .close-btn { position: absolute; top: 20px; right: 20px; background: none; border: none; color: white; font-size: 30px; cursor: pointer; }
 
         @media (max-width: 1200px) { .masonry-gallery { column-count: 4; } }
-        @media (max-width: 800px) { .masonry-gallery { column-count: 2; } .nav-btn { display: none; } }
+        /* Tablette / iPad */
+        @media (max-width: 900px) { .masonry-gallery { column-count: 3; } }
+        /* Mobile */
+        @media (max-width: 600px) { 
+            .masonry-gallery { column-count: 2; } 
+            .nav-btn { display: none; } 
+        }
       `}</style>
     </main>
   );
