@@ -1,8 +1,11 @@
 "use client";
+
 import { useEffect, useState } from "react";
+
 export default function Home() {
   const [items, setItems] = useState([]);
   const [index, setIndex] = useState(null);
+
   useEffect(() => {
     fetch("/api/photos")
       .then(res => res.json())
@@ -12,8 +15,10 @@ export default function Home() {
       })
       .catch(err => console.error("Erreur de chargement:", err));
   }, []);
+
   const next = () => setIndex((prev) => (prev + 1) % items.length);
   const prev = () => setIndex((prev) => (prev === 0 ? items.length - 1 : prev - 1));
+
   return (
     <main style={{ background: "#000", color: "#fff", minHeight: "100vh", padding: "10px" }}>
       <header style={{ padding: "20px 0", textAlign: "center" }}>
@@ -21,6 +26,7 @@ export default function Home() {
           MATTJNO | Sport Photography
         </h1>
       </header>
+
       <section className="masonry-gallery">
         {items.map((it, i) => (
           <div
@@ -29,7 +35,7 @@ export default function Home() {
             onClick={() => setIndex(i)}
             style={{ 
               /* On force le ratio directement ici */
-              aspectRatio: ${it.w} / ${it.h},
+              aspectRatio: `${it.w} / ${it.h}`,
             }}
           >
             <img
@@ -42,6 +48,7 @@ export default function Home() {
           </div>
         ))}
       </section>
+
       {/* Modal */}
       {index !== null && items[index] && (
         <div className="modal" onClick={() => setIndex(null)}>
@@ -53,8 +60,10 @@ export default function Home() {
           </div>
         </div>
       )}
-      <style jsx global>{
+
+      <style jsx global>{`
         body { margin: 0; background: #000; }
+
         .masonry-gallery {
           column-count: 6;
           column-gap: 12px;
@@ -62,6 +71,7 @@ export default function Home() {
           width: 100%;
           display: block; /* Force l'affichage du conteneur */
         }
+
         .masonry-brick {
           break-inside: avoid;
           margin-bottom: 12px;
@@ -72,6 +82,7 @@ export default function Home() {
           overflow: hidden;
           border-radius: 2px;
         }
+
         .raw-img {
           width: 100%;
           height: auto; /* Laisse le ratio du parent dicter la hauteur */
@@ -79,6 +90,7 @@ export default function Home() {
           opacity: 0;
           transition: opacity 0.5s ease;
         }
+
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 1000; }
         .modal-content { position: relative; max-width: 90vw; }
         .modal-img { max-width: 90vw; max-height: 90vh; object-fit: contain; }
@@ -86,9 +98,10 @@ export default function Home() {
         .left { left: -70px; }
         .right { right: -70px; }
         .close-btn { position: absolute; top: 20px; right: 20px; background: none; border: none; color: white; font-size: 30px; cursor: pointer; }
+
         @media (max-width: 1200px) { .masonry-gallery { column-count: 4; } }
         @media (max-width: 800px) { .masonry-gallery { column-count: 2; } .nav-btn { display: none; } }
-      }</style>
+      `}</style>
     </main>
   );
 }
