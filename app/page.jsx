@@ -9,7 +9,11 @@ export default function Home() {
   useEffect(() => {
     fetch("/api/photos")
       .then(res => res.json())
-      .then(data => setItems(Array.isArray(data) ? data : (data?.items || [])));
+      .then(data => {
+        const photos = Array.isArray(data) ? data : (data?.items || []);
+        setItems(photos);
+      })
+      .catch(err => console.error("Erreur de chargement:", err));
   }, []);
 
   const next = () => setIndex((prev) => (prev + 1) % items.length);
@@ -30,10 +34,8 @@ export default function Home() {
             className="masonry-brick"
             onClick={() => setIndex(i)}
             style={{ 
-              /* 1. On force le ratio ici pour bloquer la hauteur immédiatement */
+              /* On force le ratio directement ici */
               aspectRatio: `${it.w} / ${it.h}`,
-              /* 2. On ajoute une couleur de fond pour voir le bloc pendant le chargement */
-              backgroundColor: "#0d0d0d"
             }}
           >
             <img
@@ -67,27 +69,26 @@ export default function Home() {
           column-gap: 12px;
           padding: 0 10px;
           width: 100%;
+          display: block; /* Force l'affichage du conteneur */
         }
 
         .masonry-brick {
           break-inside: avoid;
           margin-bottom: 12px;
+          background: #111;
           cursor: pointer;
           width: 100%;
           display: block;
           overflow: hidden;
           border-radius: 2px;
-          /* 3. On aide le navigateur à ne pas s'effondrer */
-          contain: size layout;
         }
 
         .raw-img {
           width: 100%;
-          height: 100%; /* L'image remplit le bloc déjà dimensionné */
+          height: auto; /* Laisse le ratio du parent dicter la hauteur */
           display: block;
           opacity: 0;
-          transition: opacity 0.6s ease;
-          object-fit: cover;
+          transition: opacity 0.5s ease;
         }
 
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 1000; }
