@@ -9,10 +9,7 @@ export default function Home() {
   useEffect(() => {
     fetch("/api/photos")
       .then(res => res.json())
-      .then(data => {
-        const photos = Array.isArray(data) ? data : (data?.items || []);
-        setItems(photos);
-      });
+      .then(data => setItems(Array.isArray(data) ? data : (data?.items || [])));
   }, []);
 
   const next = () => setIndex((prev) => (prev + 1) % items.length);
@@ -31,13 +28,13 @@ export default function Home() {
           <div
             key={it.name || i}
             className="masonry-brick"
-            style={{ 
-              /* 1. On réserve l'espace EXACT avec le ratio */
-              aspectRatio: `${it.w} / ${it.h}`,
-              /* 2. On définit une hauteur minimale pour éviter que la div ne fasse 0px au départ */
-              minHeight: "50px" 
-            }}
             onClick={() => setIndex(i)}
+            style={{ 
+              /* 1. On force le ratio ici pour bloquer la hauteur immédiatement */
+              aspectRatio: `${it.w} / ${it.h}`,
+              /* 2. On ajoute une couleur de fond pour voir le bloc pendant le chargement */
+              backgroundColor: "#0d0d0d"
+            }}
           >
             <img
               src={it.thumb}
@@ -50,16 +47,12 @@ export default function Home() {
         ))}
       </section>
 
-      {/* Modal Plein Écran */}
+      {/* Modal */}
       {index !== null && items[index] && (
         <div className="modal" onClick={() => setIndex(null)}>
           <button className="close-btn">✕</button>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <img
-              src={items[index].full}
-              className="modal-img"
-              alt=""
-            />
+            <img src={items[index].full} className="modal-img" alt="" />
             <button className="nav-btn left" onClick={prev}>‹</button>
             <button className="nav-btn right" onClick={next}>›</button>
           </div>
@@ -73,31 +66,30 @@ export default function Home() {
           column-count: 6;
           column-gap: 12px;
           padding: 0 10px;
-          /* 3. Empêche le recalcul global pendant le scroll */
-          contain: layout;
+          width: 100%;
         }
 
         .masonry-brick {
           break-inside: avoid;
           margin-bottom: 12px;
-          background: #111; /* Petit gris foncé pour simuler la photo qui arrive */
           cursor: pointer;
           width: 100%;
-          border-radius: 2px;
+          display: block;
           overflow: hidden;
-          /* 4. Force le maintien de la position */
-          transform: translateZ(0); 
+          border-radius: 2px;
+          /* 3. On aide le navigateur à ne pas s'effondrer */
+          contain: size layout;
         }
 
         .raw-img {
           width: 100%;
-          height: auto;
+          height: 100%; /* L'image remplit le bloc déjà dimensionné */
           display: block;
           opacity: 0;
-          transition: opacity 0.8s ease;
+          transition: opacity 0.6s ease;
+          object-fit: cover;
         }
 
-        /* Modal simple */
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 1000; }
         .modal-content { position: relative; max-width: 90vw; }
         .modal-img { max-width: 90vw; max-height: 90vh; object-fit: contain; }
