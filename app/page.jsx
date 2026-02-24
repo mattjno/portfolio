@@ -1,151 +1,184 @@
 "use client";
-import { useEffect, useState } from "react";
+
+import { useEffect, useState, useMemo } from "react";
 
 export default function Home() {
   const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [index, setIndex] = useState(null);
 
+  // 1. Chargement sécurisé des données
   useEffect(() => {
-    // On charge ton manifest
-    fetch("/api/photos")
-      .then(res => res.json())
-      .then(data => setItems(data || [])); // Utilise direct 'data' si c'est une liste
+    async function load() {
+      try {
+        setLoading(true);
+        const res = await fetch("/api/photos");
+        const data = await res.json();
+        
+        // Sécurité : gère si le JSON est [ ] ou { items: [ ] }
+        const photos = Array.isArray(data) ? data : (data?.items || []);
+        setItems(photos);
+      } catch (e) {
+        console.error("Erreur API:", e);
+        setItems([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
   }, []);
 
+  // 2. Navigation
+  const next = () => setIndex((prev) => (prev + 1) % items.length);
+  const prev = () => setIndex((prev) => (prev === 0 ? items.length - 1 : prev - 1));
+
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (index === null) return;
+      if (e.key === "Escape") setIndex(null);
+      if (e.key === "ArrowRight") next();
+      if (e.key === "ArrowLeft") prev();
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [index, items.length]);
+
+  const title = useMemo(() => "MATTJNO | Sport Photography", []);
+
   return (
-    <main style={{ background: '#000', color: '#fff', minHeight: '100vh', padding: '10px' }}>
-      <header style={{ marginBottom: '30px', padding: '10px 0' }}>
-        <h1 style={{ fontSize: '12px', letterSpacing: '4px', fontWeight: '300', textTransform: 'uppercase', opacity: 0.8 }}>
-          MATTJNO | Sport Photography
+    <main style={{ background: "#000", color: "#fff", minHeight: "100vh", padding: "20px" }}>
+      <header style={{ marginBottom: "30px", textAlign: "center" }}>
+        <h1 style={{ fontSize: "12px", letterSpacing: "4px", fontWeight: "300", opacity: 0.8 }}>
+          {title}
         </h1>
+        {loading && <div style={{ fontSize: "10px", opacity: 0.5, marginTop: "10px" }}>Chargement...</div>}
       </header>
 
-      <div className="masonry-grid">
+      {/* Grille Masonry 6 colonnes stable */}
+      <section className="grid">
         {items.map((it, i) => (
-          <div 
-            key={it.name} 
-            className="masonry-item" 
+          <button
+            key={it.name || i}
+            className="tile"
             onClick={() => setIndex(i)}
             style={{ 
-              /* Utilisation de 'w' et 'h' de ton JSON pour bloquer la mise en page */
-              aspectRatio: `${it.w} / ${it.h}`,
-              backgroundColor: '#0a0a0a' 
+              /* Utilisation de tes clés w et h pour bloquer le layout */
+              aspectRatio: it.w && it.h ? `${it.w} / ${it.h}` : "2/3" 
             }}
           >
-            <img 
-              src={it.thumb} 
-              alt={it.name}
-              loading="lazy" 
-              className="gallery-img"
-              onLoad={(e) => e.currentTarget.style.opacity = "1"}
+            <img
+              src={it.thumb}
+              className="img"
+              loading="lazy"
+              alt=""
+              onLoad={(e) => e.currentTarget.classList.add("loaded")}
             />
-          </div>
+          </button>
         ))}
-      </div>
+      </section>
 
-      {/* Modal Plein Écran Adaptable */}
-      {index !== null && (
+      {/* Modal Plein Écran */}
+      {index !== null && items[index] && (
         <div className="modal" onClick={() => setIndex(null)}>
-          <button className="close-btn">✕</button>
+          <button className="close" onClick={() => setIndex(null)}>✕</button>
           
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <img 
-              src={items[index]?.full} 
-              className="modal-img" 
-              alt="" 
-              style={{ aspectRatio: `${items[index].w} / ${items[index].h}` }}
+            <img
+              src={items[index].full}
+              className="modalImg"
+              style={{ aspectRatio: items[index].w && items[index].h ? `${items[index].w} / ${items[index].h}` : "auto" }}
+              alt=""
             />
             
-            <button className="nav-btn prev" onClick={() => setIndex((index - 1 + items.length) % items.length)}>‹</button>
-            <button className="nav-btn next" onClick={() => setIndex((index + 1) % items.length)}>›</button>
+            <button className="nav left" onClick={(e) => { e.stopPropagation(); prev(); }}>‹</button>
+            <button className="nav right" onClick={(e) => { e.stopPropagation(); next(); }}>›</button>
           </div>
         </div>
       )}
 
-      <style jsx>{`
-        .masonry-grid {
+      <style jsx global>{`
+        body { margin: 0; background: #000; }
+
+        .grid {
           column-count: 6;
-          column-gap: 8px;
+          column-gap: 10px;
           width: 100%;
         }
 
-        .masonry-item {
-          break-inside: avoid;
-          margin-bottom: 8px;
-          border-radius: 1px;
+        .tile {
+          display: block;
+          width: 100%;
+          border: 0;
+          padding: 0;
+          margin-bottom: 10px;
+          background: #0a0a0a;
           cursor: pointer;
+          break-inside: avoid;
           overflow: hidden;
-          width: 100%;
         }
 
-        .gallery-img {
+        .img {
           width: 100%;
           height: 100%;
           display: block;
-          opacity: 0;
-          transition: opacity 0.4s ease-in-out;
           object-fit: cover;
+          opacity: 0;
+          transition: opacity 0.5s ease;
         }
 
+        .img.loaded { opacity: 1; }
+
+        /* Modal */
         .modal {
           position: fixed;
           inset: 0;
-          background: rgba(0,0,0,0.98);
+          background: rgba(0, 0, 0, 0.98);
           display: flex;
           align-items: center;
           justify-content: center;
-          z-index: 1000;
+          z-index: 9999;
         }
 
-        .modal-content {
-          position: relative;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
+        .modal-content { position: relative; display: flex; align-items: center; }
 
-        .modal-img {
+        .modalImg {
           max-width: 95vw;
           max-height: 92vh;
           object-fit: contain;
-          box-shadow: 0 0 40px rgba(0,0,0,0.5);
         }
 
-        .nav-btn {
+        .nav {
           position: absolute;
           background: none;
           border: none;
-          color: white;
-          font-size: 60px;
+          color: #fff;
+          font-size: 50px;
           cursor: pointer;
           opacity: 0.3;
-          transition: 0.2s;
           padding: 20px;
-          top: 50%;
-          transform: translateY(-50%);
+          transition: 0.2s;
         }
-        .nav-btn:hover { opacity: 1; }
-        .prev { left: -80px; }
-        .next { right: -80px; }
+        .nav:hover { opacity: 1; }
+        .nav.left { left: -80px; }
+        .nav.right { right: -80px; }
 
-        .close-btn {
+        .close {
           position: absolute;
           top: 20px;
           right: 20px;
           background: none;
           border: none;
-          color: white;
+          color: #fff;
           font-size: 24px;
           cursor: pointer;
-          z-index: 1010;
         }
 
-        /* Responsiveness pour garder des photos visibles */
-        @media (max-width: 1600px) { .masonry-grid { column-count: 5; } }
-        @media (max-width: 1200px) { .masonry-grid { column-count: 4; } }
-        @media (max-width: 900px) { 
-          .masonry-grid { column-count: 2; } 
-          .prev, .next { display: none; }
+        /* Responsive */
+        @media (max-width: 1600px) { .grid { column-count: 5; } }
+        @media (max-width: 1200px) { .grid { column-count: 4; } }
+        @media (max-width: 800px) { 
+          .grid { column-count: 2; } 
+          .nav { display: none; }
         }
       `}</style>
     </main>
