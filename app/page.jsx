@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image"; // Import indispensable pour la vitesse
 
 export default function Home() {
   const [items, setItems] = useState([]);
@@ -9,31 +10,25 @@ export default function Home() {
 
   useEffect(() => {
     let alive = true;
-
     async function load() {
       try {
         setLoading(true);
         const res = await fetch("/api/photos", { cache: "no-store" });
         const data = await res.json();
-        if (!res.ok) throw new Error(data?.error || "Failed to load photos");
+        if (!res.ok) throw new Error(data?.error || "Failed");
         if (alive) setItems(data.items || []);
       } catch (e) {
-        console.error(e);
         if (alive) setItems([]);
       } finally {
         if (alive) setLoading(false);
       }
     }
-
     load();
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, []);
 
   const open = (i) => setIndex(i);
   const close = () => setIndex(null);
-
   const next = () => setIndex((prev) => (prev + 1) % items.length);
   const prev = () => setIndex((prev) => (prev === 0 ? items.length - 1 : prev - 1));
 
@@ -51,165 +46,117 @@ export default function Home() {
   const title = useMemo(() => "MATTJNO | Sport Photography", []);
 
   return (
-    <main style={{ padding: 20 }}>
-      <header style={{ marginBottom: 18 }}>
-        <div style={{ fontSize: 14, letterSpacing: 2, opacity: 0.85 }}>
+    <main style={{ padding: "20px" }}>
+      <header style={{ marginBottom: 30 }}>
+        <h1 style={{ fontSize: 14, letterSpacing: 4, opacity: 0.85, textTransform: 'uppercase' }}>
           {title}
-        </div>
-        {loading && (
-          <div style={{ marginTop: 8, fontSize: 13, opacity: 0.65 }}>
-            Chargement…
-          </div>
-        )}
+        </h1>
+        {loading && <div style={{ fontSize: 12, opacity: 0.5 }}>Chargement...</div>}
       </header>
 
-      <section className="grid">
+      {/* Section Masonry */}
+      <section className="masonry-grid">
         {items.map((it, i) => (
-          <button
-            key={it.thumb}
-            className="tile"
-            onClick={() => open(i)}
-            aria-label="Open photo"
-          >
-            <img
+          <div key={it.thumb} className="masonry-item" onClick={() => open(i)}>
+            <Image
               src={it.thumb}
-              className="img"
-              loading="lazy"
-              decoding="async"
-              onLoad={(e) => e.currentTarget.classList.add("loaded")}
               alt=""
+              width={500} // Largeur de référence pour l'optimisation
+              height={700} // Hauteur de référence (Next calculera le ratio)
+              className="img-fluid"
+              sizes="(max-width: 600px) 50vw, (max-width: 1200px) 33vw, 16vw"
             />
-          </button>
+          </div>
         ))}
       </section>
 
+      {/* Modal - Plein écran adaptable */}
       {index !== null && (
         <div className="modal" onClick={close}>
-          <button
-            className="nav left"
-            onClick={(e) => (e.stopPropagation(), prev())}
-            aria-label="Previous"
-          >
-            ‹
-          </button>
+          <button className="nav left" onClick={(e) => {e.stopPropagation(); prev();}}>‹</button>
+          
+          <div className="modal-content">
+             <Image 
+                src={items[index]?.full} 
+                alt="" 
+                fill 
+                className="modalImg"
+                priority // Charge l'image de la modal immédiatement
+             />
+          </div>
 
-          <img
-            src={items[index]?.full}
-            className="modalImg"
-            onClick={(e) => e.stopPropagation()}
-            alt=""
-          />
-
-          <button
-            className="nav right"
-            onClick={(e) => (e.stopPropagation(), next())}
-            aria-label="Next"
-          >
-            ›
-          </button>
-
-          <button
-            className="close"
-            onClick={(e) => (e.stopPropagation(), close())}
-            aria-label="Close"
-          >
-            ✕
-          </button>
+          <button className="nav right" onClick={(e) => {e.stopPropagation(); next();}}>›</button>
+          <button className="close" onClick={close}>✕</button>
         </div>
       )}
 
       <style jsx global>{`
-        body {
-          background: #000;
-          color: #fff;
+        body { background: #000; color: #fff; margin: 0; font-family: sans-serif; }
+
+        /* Configuration du Masonry */
+        .masonry-grid {
+          column-count: 6;
+          column-gap: 15px;
         }
 
-        .grid {
-          display: grid;
-          grid-template-columns: repeat(6, minmax(0, 1fr));
-          gap: 12px;
-        }
-
-        @media (max-width: 1600px) {
-          .grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-        }
-        @media (max-width: 1200px) {
-          .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-        }
-        @media (max-width: 900px) {
-          .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-        }
-        @media (max-width: 600px) {
-          .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        }
-
-        .tile {
-          border: 0;
-          padding: 0;
-          background: #111;
+        .masonry-item {
+          break-inside: avoid;
+          margin-bottom: 15px;
           cursor: pointer;
-          border-radius: 2px;
-          overflow: hidden;
+          background: #111;
+          transition: transform 0.3s ease;
         }
+        
+        .masonry-item:hover { transform: scale(1.02); }
 
-        .img {
+        .img-fluid {
           width: 100%;
           height: auto;
           display: block;
-          opacity: 0;
-          transition: opacity 200ms ease;
+          border-radius: 2px;
         }
 
-        .img.loaded {
-          opacity: 1;
-        }
+        /* Responsive Masonry */
+        @media (max-width: 1600px) { .masonry-grid { column-count: 5; } }
+        @media (max-width: 1200px) { .masonry-grid { column-count: 4; } }
+        @media (max-width: 900px) { .masonry-grid { column-count: 3; } }
+        @media (max-width: 600px) { .masonry-grid { column-count: 2; } }
 
         .modal {
           position: fixed;
           inset: 0;
-          background: rgba(0, 0, 0, 0.95);
+          background: rgba(0, 0, 0, 0.98);
           display: flex;
           align-items: center;
           justify-content: center;
           z-index: 9999;
         }
 
+        .modal-content {
+          position: relative;
+          width: 90vw;
+          height: 85vh;
+        }
+
         .modalImg {
-          max-width: 94vw;
-          max-height: 92vh;
-          object-fit: contain;
+          object-fit: contain; /* Garde le ratio peu importe le format */
         }
 
-        .nav {
+        .nav, .close {
           position: absolute;
-          top: 50%;
-          transform: translateY(-50%);
-          border: 0;
-          background: rgba(255, 255, 255, 0.08);
-          color: #fff;
-          font-size: 34px;
-          width: 48px;
-          height: 48px;
-          border-radius: 999px;
+          background: none;
+          border: none;
+          color: white;
           cursor: pointer;
+          font-size: 40px;
+          z-index: 10;
+          opacity: 0.6;
+          transition: 0.2s;
         }
-
-        .nav.left { left: 18px; }
-        .nav.right { right: 18px; }
-
-        .close {
-          position: absolute;
-          top: 18px;
-          right: 18px;
-          border: 0;
-          background: rgba(255, 255, 255, 0.08);
-          color: #fff;
-          width: 40px;
-          height: 40px;
-          border-radius: 999px;
-          cursor: pointer;
-          font-size: 18px;
-        }
+        .nav:hover, .close:hover { opacity: 1; }
+        .nav.left { left: 20px; }
+        .nav.right { right: 20px; }
+        .close { top: 20px; right: 20px; font-size: 24px; }
       `}</style>
     </main>
   );
