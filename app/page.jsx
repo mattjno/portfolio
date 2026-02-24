@@ -7,7 +7,6 @@ export default function Home() {
   const [index, setIndex] = useState(null);
   const containerRef = useRef(null);
 
-  // Calcule le nb de colonnes selon la largeur
   const getColCount = () => {
     if (typeof window === "undefined") return 6;
     if (window.innerWidth <= 800) return 2;
@@ -15,16 +14,13 @@ export default function Home() {
     return 6;
   };
 
-  // Distribue les items dans les colonnes en équilibrant les hauteurs
   const buildColumns = useCallback((photoItems, colCount) => {
     const cols = Array.from({ length: colCount }, () => []);
     const heights = new Array(colCount).fill(0);
 
     photoItems.forEach((item) => {
-      // Trouve la colonne la moins haute
       const shortest = heights.indexOf(Math.min(...heights));
       cols[shortest].push(item);
-      // Ajoute la hauteur proportionnelle (ratio h/w)
       const ratio = item.h && item.w ? item.h / item.w : 1;
       heights[shortest] += ratio;
     });
@@ -43,7 +39,6 @@ export default function Home() {
       .catch((err) => console.error("Erreur de chargement:", err));
   }, [buildColumns]);
 
-  // Recalcule les colonnes au resize
   useEffect(() => {
     const handleResize = () => {
       if (items.length > 0) {
@@ -55,10 +50,8 @@ export default function Home() {
   }, [items, buildColumns]);
 
   const next = () => setIndex((prev) => (prev + 1) % items.length);
-  const prev = () =>
-    setIndex((prev) => (prev === 0 ? items.length - 1 : prev - 1));
+  const prev = () => setIndex((prev) => (prev === 0 ? items.length - 1 : prev - 1));
 
-  // Keyboard navigation
   useEffect(() => {
     const handleKey = (e) => {
       if (index === null) return;
@@ -78,7 +71,6 @@ export default function Home() {
         </h1>
       </header>
 
-      {/* Masonry JS : flexbox colonnes */}
       <div className="masonry-container" ref={containerRef}>
         {columns.map((col, ci) => (
           <div key={ci} className="masonry-col">
@@ -91,7 +83,6 @@ export default function Home() {
                   key={it.name || it.thumb}
                   className="masonry-brick"
                   onClick={() => setIndex(globalIndex)}
-                  style={{ paddingBottom: it.w && it.h ? `${(it.h / it.w) * 100}%` : "66%" }}
                 >
                   <img
                     src={it.thumb}
@@ -107,7 +98,6 @@ export default function Home() {
         ))}
       </div>
 
-      {/* Modal */}
       {index !== null && items[index] && (
         <div className="modal" onClick={() => setIndex(null)}>
           <button className="close-btn" onClick={() => setIndex(null)}>✕</button>
@@ -137,9 +127,7 @@ export default function Home() {
           min-width: 0;
         }
 
-        /* padding-bottom trick : réserve exactement la place du ratio */
         .masonry-brick {
-          position: relative;
           width: 100%;
           background: #111;
           cursor: pointer;
@@ -147,13 +135,10 @@ export default function Home() {
           border-radius: 2px;
         }
 
-        /* L'image se positionne en absolu pour remplir le conteneur */
         .masonry-img {
-          position: absolute;
-          inset: 0;
+          display: block;
           width: 100%;
-          height: 100%;
-          object-fit: cover;
+          height: auto;
           opacity: 0;
           transition: opacity 0.5s ease;
         }
@@ -179,9 +164,6 @@ export default function Home() {
           font-size: 30px; cursor: pointer; z-index: 1001;
         }
 
-        @media (max-width: 1200px) {
-          /* Le resize handler gère les colonnes, mais on masque les extras au CSS aussi */
-        }
         @media (max-width: 800px) {
           .nav-btn { display: none; }
         }
