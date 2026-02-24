@@ -14,7 +14,6 @@ export async function GET(request) {
     const keyId = process.env.B2_KEY_ID;
     const appKey = process.env.B2_APPLICATION_KEY;
 
-    // AUTHENTICATION B2
     const authRes = await fetch("https://api.backblazeb2.com/b2api/v2/b2_authorize_account", {
       headers: { Authorization: "Basic " + Buffer.from(`${keyId}:${appKey}`).toString("base64") },
     });
@@ -22,7 +21,7 @@ export async function GET(request) {
     const { apiUrl, authorizationToken: token, allowed } = auth;
     const bucketId = allowed?.bucketId;
 
-    // --- CAS 1 : LISTE DES ALBUMS (Page /albums) ---
+    // --- CAS 1 : LISTE DES ALBUMS ---
     if (listAlbums) {
       const listRes = await fetch(`${apiUrl}/b2api/v2/b2_list_file_names`, {
         method: "POST",
@@ -33,30 +32,32 @@ export async function GET(request) {
       
       const folders = (data.files || [])
         .filter(f => f.fileName.endsWith('/') && f.fileName !== "albums/")
-        .map(f => {
-          const cleanId = f.fileName.replace("albums/", "").replace("/", "");
-          return {
-            id: cleanId,
-            title: cleanId.replaceAll("-", " "),
-            fullPath: f.fileName 
-          };
-        });
+        .map(f => ({
+          id: f.fileName.replace("albums/", "").replace("/", ""),
+          fullPath: f.fileName 
+        }));
 
       const foldersWithCover = await Promise.all(folders.map(async (f) => {
+        // On liste TOUS les fichiers dans le dossier de l'album pour trouver une image
         const coverRes = await fetch(`${apiUrl}/b2api/v2/b2_list_file_names`, {
           method: "POST",
           headers: { Authorization: token, "Content-Type": "application/json" },
           body: JSON.stringify({ 
             bucketId, 
-            prefix: `${f.fullPath}thumbs/`, 
-            maxFileCount: 1 
+            prefix: f.fullPath, // On cherche à la racine de l'album
+            maxFileCount: 10 // On regarde les 10 premiers fichiers
           }),
         });
         const coverData = await coverRes.json();
-        const firstImg = (coverData.files || []).find(file => /\.(jpg|jpeg|png|webp)$/i.test(file.fileName));
         
+        // On cherche le premier fichier qui est une image (dans thumbs ou ailleurs)
+        const firstImg = (coverData.files || []).find(file => 
+          /\.(jpg|jpeg|png|webp)$/i.test(file.fileName)
+        );
+
         return { 
-          ...f, 
+          id: f.id,
+          title: f.id.replaceAll("-", " "),
           cover: firstImg ? `${PUBLIC_BASE_URL}${firstImg.fileName}` : null 
         };
       }));
@@ -64,7 +65,7 @@ export async function GET(request) {
       return NextResponse.json({ albums: foldersWithCover });
     }
 
-    // --- CAS 2 : PHOTOS D'UN ALBUM OU DU BESTOF ---
+    // --- CAS 2 : PHOTOS D'UN ALBUM ---
     const prefix = albumId ? `albums/${albumId}/` : "bestof/";
     const THUMBS_PREFIX = `${prefix}thumbs/`;
     const FULL_PREFIX = `${prefix}full/`;
