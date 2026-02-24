@@ -1,162 +1,78 @@
 "use client";
-
-import { useEffect, useMemo, useState } from "react";
-import Image from "next/image"; // Import indispensable pour la vitesse
+import { useEffect, useState } from "react";
 
 export default function Home() {
   const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [index, setIndex] = useState(null);
 
   useEffect(() => {
-    let alive = true;
-    async function load() {
-      try {
-        setLoading(true);
-        const res = await fetch("/api/photos", { cache: "no-store" });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data?.error || "Failed");
-        if (alive) setItems(data.items || []);
-      } catch (e) {
-        if (alive) setItems([]);
-      } finally {
-        if (alive) setLoading(false);
-      }
-    }
-    load();
-    return () => { alive = false; };
+    fetch("/api/photos").then(res => res.json()).then(data => setItems(data.items || []));
   }, []);
 
-  const open = (i) => setIndex(i);
-  const close = () => setIndex(null);
-  const next = () => setIndex((prev) => (prev + 1) % items.length);
-  const prev = () => setIndex((prev) => (prev === 0 ? items.length - 1 : prev - 1));
-
-  useEffect(() => {
-    const handleKey = (e) => {
-      if (index === null) return;
-      if (e.key === "Escape") close();
-      if (e.key === "ArrowRight") next();
-      if (e.key === "ArrowLeft") prev();
-    };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [index, items.length]);
-
-  const title = useMemo(() => "MATTJNO | Sport Photography", []);
-
   return (
-    <main style={{ padding: "20px" }}>
-      <header style={{ marginBottom: 30 }}>
-        <h1 style={{ fontSize: 14, letterSpacing: 4, opacity: 0.85, textTransform: 'uppercase' }}>
-          {title}
-        </h1>
-        {loading && <div style={{ fontSize: 12, opacity: 0.5 }}>Chargement...</div>}
+    <main style={{ background: '#000', color: '#fff', minHeight: '100vh', padding: '20px' }}>
+      <header style={{ marginBottom: '20px', fontSize: '12px', letterSpacing: '2px' }}>
+        MATTJNO | SPORT PHOTOGRAPHY
       </header>
 
-      {/* Section Masonry */}
-      <section className="masonry-grid">
+      {/* Grille type "Pinterest" (Masonry) : Idéal pour portrait + paysage */}
+      <div className="columns">
         {items.map((it, i) => (
-          <div key={it.thumb} className="masonry-item" onClick={() => open(i)}>
-            <Image
-              src={it.thumb}
-              alt=""
-              width={500} // Largeur de référence pour l'optimisation
-              height={700} // Hauteur de référence (Next calculera le ratio)
-              className="img-fluid"
-              sizes="(max-width: 600px) 50vw, (max-width: 1200px) 33vw, 16vw"
-            />
+          <div key={i} className="item" onClick={() => setIndex(i)}>
+            <img src={it.thumb} alt="" loading="lazy" />
           </div>
         ))}
-      </section>
+      </div>
 
-      {/* Modal - Plein écran adaptable */}
+      {/* Modal Plein Écran */}
       {index !== null && (
-        <div className="modal" onClick={close}>
-          <button className="nav left" onClick={(e) => {e.stopPropagation(); prev();}}>‹</button>
-          
-          <div className="modal-content">
-             <Image 
-                src={items[index]?.full} 
-                alt="" 
-                fill 
-                className="modalImg"
-                priority // Charge l'image de la modal immédiatement
-             />
-          </div>
-
-          <button className="nav right" onClick={(e) => {e.stopPropagation(); next();}}>›</button>
-          <button className="close" onClick={close}>✕</button>
+        <div className="modal" onClick={() => setIndex(null)}>
+          <img src={items[index]?.full} className="modal-img" alt="" />
+          <button className="close-x">✕</button>
         </div>
       )}
 
-      <style jsx global>{`
-        body { background: #000; color: #fff; margin: 0; font-family: sans-serif; }
-
-        /* Configuration du Masonry */
-        .masonry-grid {
-          column-count: 6;
-          column-gap: 15px;
+      <style jsx>{`
+        .columns {
+          column-count: 4; /* Nombre de colonnes */
+          column-gap: 10px;
         }
-
-        .masonry-item {
+        .item {
+          margin-bottom: 10px;
           break-inside: avoid;
-          margin-bottom: 15px;
           cursor: pointer;
-          background: #111;
-          transition: transform 0.3s ease;
         }
-        
-        .masonry-item:hover { transform: scale(1.02); }
-
-        .img-fluid {
+        .item img {
           width: 100%;
-          height: auto;
           display: block;
-          border-radius: 2px;
+          border-radius: 4px;
         }
-
-        /* Responsive Masonry */
-        @media (max-width: 1600px) { .masonry-grid { column-count: 5; } }
-        @media (max-width: 1200px) { .masonry-grid { column-count: 4; } }
-        @media (max-width: 900px) { .masonry-grid { column-count: 3; } }
-        @media (max-width: 600px) { .masonry-grid { column-count: 2; } }
-
         .modal {
           position: fixed;
           inset: 0;
-          background: rgba(0, 0, 0, 0.98);
+          background: rgba(0,0,0,0.9);
           display: flex;
           align-items: center;
           justify-content: center;
-          z-index: 9999;
+          z-index: 100;
         }
-
-        .modal-content {
-          position: relative;
-          width: 90vw;
-          height: 85vh;
+        .modal-img {
+          max-width: 95vw;
+          max-height: 95vh;
+          object-fit: contain;
         }
-
-        .modalImg {
-          object-fit: contain; /* Garde le ratio peu importe le format */
-        }
-
-        .nav, .close {
+        .close-x {
           position: absolute;
+          top: 20px;
+          right: 20px;
           background: none;
           border: none;
           color: white;
-          cursor: pointer;
-          font-size: 40px;
-          z-index: 10;
-          opacity: 0.6;
-          transition: 0.2s;
+          font-size: 24px;
         }
-        .nav:hover, .close:hover { opacity: 1; }
-        .nav.left { left: 20px; }
-        .nav.right { right: 20px; }
-        .close { top: 20px; right: 20px; font-size: 24px; }
+
+        /* Ajustement mobile */
+        @media (max-width: 800px) { .columns { column-count: 2; } }
       `}</style>
     </main>
   );
