@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Lightbox from "./Lightbox";
 
-// Skeleton affiché pendant le chargement
 export function MasonrySkeleton() {
   const heights = [1.2, 0.75, 1.5, 1, 0.8, 1.3, 1, 0.9, 1.4, 0.7, 1.1, 1.6, 0.85, 1.2, 0.95, 1.3, 1, 0.75, 1.5, 1.1, 0.9, 1.35, 1, 0.8];
 
@@ -11,14 +10,9 @@ export function MasonrySkeleton() {
     <>
       <section className="masonry-gallery">
         {heights.map((ratio, i) => (
-          <div
-            key={i}
-            className="masonry-brick skeleton-brick"
-            style={{ aspectRatio: `1 / ${ratio}` }}
-          />
+          <div key={i} className="masonry-brick skeleton-brick" style={{ aspectRatio: `1 / ${ratio}` }} />
         ))}
       </section>
-
       <style jsx global>{`
         @keyframes shimmer {
           0%   { background-position: -800px 0; }
@@ -30,9 +24,7 @@ export function MasonrySkeleton() {
           animation: shimmer 1.4s infinite linear;
           cursor: default !important;
         }
-        .skeleton-brick:hover {
-          transform: none !important;
-        }
+        .skeleton-brick:hover { transform: none !important; }
       `}</style>
     </>
   );
@@ -86,3 +78,33 @@ export default function MasonryGallery({ items }) {
           padding: 0 10px;
           width: 100%;
         }
+        .masonry-brick {
+          break-inside: avoid;
+          margin-bottom: 10px;
+          background: #0d0d0d;
+          cursor: pointer;
+          width: 100%;
+          display: block;
+          overflow: hidden;
+          border-radius: 2px;
+          transition: transform 0.3s ease;
+        }
+        .masonry-brick:hover {
+          transform: scale(1.015);
+          z-index: 1;
+          position: relative;
+        }
+        .raw-img {
+          width: 100%;
+          height: auto;
+          display: block;
+          opacity: 0;
+          transition: opacity 0.4s ease;
+        }
+        @media (max-width: 1200px) { .masonry-gallery { column-count: 4; } }
+        @media (max-width: 900px)  { .masonry-gallery { column-count: 3; } }
+        @media (max-width: 600px)  { .masonry-gallery { column-count: 2; } }
+      `}</style>
+    </>
+  );
+}
