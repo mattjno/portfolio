@@ -1,7 +1,9 @@
-name: Update bestof manifest
+name: Update manifests (bestof + albums)
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:        # Lancement manuel depuis GitHub
+  push:
+    branches: [main]        # Ou automatique à chaque push
 
 permissions:
   contents: write
@@ -21,20 +23,26 @@ jobs:
       - name: Install dependencies
         run: npm i image-size
 
-      - name: Generate manifest
+      - name: Generate bestof manifest
         env:
           B2_KEY_ID: ${{ secrets.B2_KEY_ID }}
           B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
         run: node scripts/generate-bestof-manifest.mjs
 
+      - name: Generate albums manifests
+        env:
+          B2_KEY_ID: ${{ secrets.B2_KEY_ID }}
+          B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+        run: node scripts/generate-album-manifest.mjs
+
       - name: Commit and push if changed
         run: |
-          if git diff --quiet; then
-            echo "No changes"
-            exit 0
-          fi
           git config user.name "mattjno-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add public/bestof-manifest.json
-          git commit -m "Update bestof manifest"
-          git push
+          git add public/bestof-manifest.json public/albums-manifest.json public/albums/
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update photo manifests with dimensions"
+            git push
+          fi
