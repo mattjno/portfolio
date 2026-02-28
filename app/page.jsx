@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import SiteHeader from "./components/SiteHeader";
-import MasonryGallery from "./components/MasonryGallery";
+import MasonryGallery, { MasonrySkeleton } from "./components/MasonryGallery";
 
 export default function Home() {
   const [items, setItems] = useState([]);
@@ -28,11 +28,7 @@ export default function Home() {
     <main style={{ background: "#000", color: "#fff", minHeight: "100vh", padding: "10px" }}>
       <SiteHeader />
 
-      {loading && (
-        <div style={{ textAlign: "center", fontSize: "10px", opacity: 0.4, marginTop: "60px", letterSpacing: "2px" }}>
-          Chargement...
-        </div>
-      )}
+      {loading && <MasonrySkeleton />}
 
       {error && (
         <div style={{ textAlign: "center", fontSize: "10px", color: "#f66", marginTop: "60px" }}>
