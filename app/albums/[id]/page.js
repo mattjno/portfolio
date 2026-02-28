@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import MasonryGallery from "../../components/MasonryGallery";
+import MasonryGallery, { MasonrySkeleton } from "../../components/MasonryGallery";
 
 export default function AlbumDetailPage() {
   const params = useParams();
@@ -68,13 +68,7 @@ export default function AlbumDetailPage() {
         )}
       </header>
 
-      {loading ? (
-        <div style={{ textAlign: "center", fontSize: "10px", opacity: 0.4, marginTop: "50px", letterSpacing: "2px" }}>
-          Chargement des photos...
-        </div>
-      ) : (
-        <MasonryGallery items={items} />
-      )}
+      {loading ? <MasonrySkeleton /> : <MasonryGallery items={items} />}
     </main>
   );
 }
