@@ -1,13 +1,3 @@
-/**
- * generate-album-manifest.mjs
- * 
- * Génère un manifest JSON pour chaque album avec les dimensions réelles des images.
- * 
- * Produit :
- *   public/albums-manifest.json          → liste des albums avec cover
- *   public/albums/<id>-manifest.json     → photos de chaque album avec w/h
- */
-
 import fs from "fs";
 import { imageSize } from "image-size";
 
@@ -40,7 +30,6 @@ async function fetchBuffer(url) {
   return Buffer.from(await res.arrayBuffer());
 }
 
-// Auth B2
 const authRes = await fetch("https://api.backblazeb2.com/b2api/v2/b2_authorize_account", {
   headers: { Authorization: "Basic " + Buffer.from(`${keyId}:${appKey}`).toString("base64") },
 });
@@ -49,7 +38,6 @@ const auth = await authRes.json();
 const { apiUrl, authorizationToken: token, allowed } = auth;
 const bucketId = allowed?.bucketId;
 
-// 1. Lister les dossiers d'albums
 console.log("📁 Listing albums...");
 const foldersRes = await fetch(`${apiUrl}/b2api/v2/b2_list_file_names`, {
   method: "POST",
@@ -63,7 +51,6 @@ const albumFolders = (foldersData.files || [])
 
 console.log(`Found ${albumFolders.length} albums: ${albumFolders.join(", ")}`);
 
-// 2. Pour chaque album, lister et mesurer les thumbs
 fs.mkdirSync("public/albums", { recursive: true });
 
 const albumsSummary = [];
@@ -94,15 +81,9 @@ for (const albumId of albumFolders) {
     try {
       const buf = await fetchBuffer(thumbUrl);
       const dim = imageSize(buf);
-      return {
-        name: fileNameOnly,
-        w: dim.width || 1,
-        h: dim.height || 1,
-        thumb: thumbUrl,
-        full: fullUrl,
-      };
+      return { name: fileNameOnly, w: dim.width || 1, h: dim.height || 1, thumb: thumbUrl, full: fullUrl };
     } catch (e) {
-      console.warn(`  ⚠️  Could not get dimensions for ${fileNameOnly}: ${e.message}`);
+      console.warn(`  ⚠️  ${fileNameOnly}: ${e.message}`);
       return { name: fileNameOnly, w: 3, h: 2, thumb: thumbUrl, full: fullUrl };
     }
   });
@@ -112,19 +93,14 @@ for (const albumId of albumFolders) {
   console.log(`  ✅ Written ${manifestPath}`);
 
   const coverFile = (listData.files || []).find((f) => f.fileName.includes("cover.jpg"));
-  const cover = coverFile
-    ? `${PUBLIC_BASE_URL}${coverFile.fileName}`
-    : items[0]?.thumb || null;
+  const cover = coverFile ? `${PUBLIC_BASE_URL}${coverFile.fileName}` : items[0]?.thumb || null;
 
-  albumsSummary.push({
-    id: albumId,
-    title: albumId.replaceAll("-", " "),
-    cover,
-    count: items.length,
-  });
+  albumsSummary.push({ id: albumId, title: albumId.replaceAll("-", " "), cover, count: items.length });
 }
 
-// 3. Écrire le manifest global des albums
+// ✅ Tri par date décroissante — plus récent en premier
+albumsSummary.sort((a, b) => b.id.localeCompare(a.id));
+
 fs.writeFileSync("public/albums-manifest.json", JSON.stringify(albumsSummary, null, 2) + "\n");
 console.log(`\n✅ Written public/albums-manifest.json (${albumsSummary.length} albums)`);
 console.log("🎉 Done!");
