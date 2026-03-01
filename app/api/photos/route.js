@@ -2,13 +2,11 @@ import { NextResponse } from "next/server";
 import { readFileSync } from "fs";
 import { join } from "path";
 
-// Cache statique — Next.js régénère toutes les 5 minutes
 export const revalidate = 300;
 
 const BUCKET_NAME = "mattjno-photos";
 const PUBLIC_BASE_URL = `https://f003.backblazeb2.com/file/${BUCKET_NAME}/`;
 
-// Lecture d'un manifest JSON local (généré par le script GitHub Actions)
 function readManifest(filename) {
   try {
     const filePath = join(process.cwd(), "public", filename);
@@ -18,7 +16,6 @@ function readManifest(filename) {
   }
 }
 
-// Cache token B2 en mémoire (uniquement utilisé pour les albums sans manifest)
 let cachedAuth = null;
 let authExpiry = 0;
 
@@ -49,19 +46,19 @@ export async function GET(request) {
     const albumId = searchParams.get("album");
     const listAlbums = searchParams.get("list");
 
-    // -------------------------------------------------------
     // CAS 1 : LISTE DES ALBUMS
-    // -------------------------------------------------------
     if (listAlbums) {
       const manifest = readManifest("albums-manifest.json");
       if (manifest) {
+        // ✅ Tri par date décroissante — plus récent en premier
+        const sorted = [...manifest].sort((a, b) => b.id.localeCompare(a.id));
         return NextResponse.json(
-          { albums: manifest },
+          { albums: sorted },
           { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" } }
         );
       }
 
-      // Fallback : appel B2 si pas de manifest
+      // Fallback B2
       const { apiUrl, token, bucketId } = await getB2Auth();
       const listRes = await fetch(`${apiUrl}/b2api/v2/b2_list_file_names`, {
         method: "POST",
@@ -78,7 +75,9 @@ export async function GET(request) {
             title: cleanId.replaceAll("-", " "),
             cover: `${PUBLIC_BASE_URL}albums/${cleanId}/thumbs/cover.jpg`,
           };
-        });
+        })
+        // ✅ Tri par date décroissante
+        .sort((a, b) => b.id.localeCompare(a.id));
 
       return NextResponse.json(
         { albums: folders },
@@ -86,9 +85,7 @@ export async function GET(request) {
       );
     }
 
-    // -------------------------------------------------------
-    // CAS 2 : PHOTOS BESTOF (page principale)
-    // -------------------------------------------------------
+    // CAS 2 : PHOTOS BESTOF
     if (!albumId) {
       const manifest = readManifest("bestof-manifest.json");
       if (manifest) {
@@ -99,9 +96,7 @@ export async function GET(request) {
       }
     }
 
-    // -------------------------------------------------------
     // CAS 3 : PHOTOS D'UN ALBUM
-    // -------------------------------------------------------
     const albumManifest = albumId ? readManifest(`albums/${albumId}-manifest.json`) : null;
     if (albumManifest) {
       return NextResponse.json(
@@ -110,7 +105,7 @@ export async function GET(request) {
       );
     }
 
-    // Fallback : appel B2
+    // Fallback B2
     const { apiUrl, token, bucketId } = await getB2Auth();
     const prefix = albumId ? `albums/${albumId}/` : "bestof/";
     const THUMBS_PREFIX = `${prefix}thumbs/`;
