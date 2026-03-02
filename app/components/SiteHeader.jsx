@@ -8,13 +8,13 @@ export default function SiteHeader() {
 
   return (
     <header style={{
+      padding: "24px 30px",
       display: "flex",
+      flexDirection: "column",
       alignItems: "center",
-      justifyContent: "space-between",
-      padding: "30px 40px",
-      position: "relative",
+      gap: "16px",
     }}>
-      {/* Logo gauche */}
+      {/* Logo */}
       <Link href="/" style={{ textDecoration: "none", color: "#fff" }}>
         <span style={{
           fontSize: "13px",
@@ -26,13 +26,10 @@ export default function SiteHeader() {
         </span>
       </Link>
 
-      {/* Nav centrée */}
+      {/* Nav */}
       <nav style={{
-        position: "absolute",
-        left: "50%",
-        transform: "translateX(-50%)",
         display: "flex",
-        gap: "40px",
+        gap: "30px",
       }}>
         {[
           { href: "/", label: "Sélection" },
@@ -56,6 +53,23 @@ export default function SiteHeader() {
           );
         })}
       </nav>
+
+      {/* Layout desktop : logo gauche + nav centrée */}
+      <style jsx>{`
+        @media (min-width: 768px) {
+          header {
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            gap: 0 !important;
+          }
+          nav {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+          }
+        }
+      `}</style>
     </header>
   );
 }
